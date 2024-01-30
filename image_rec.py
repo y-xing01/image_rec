@@ -14,17 +14,6 @@ from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, GlobalAveragePo
 from keras.preprocessing.image import ImageDataGenerator
 import os
 
-# Function to read a folder of PNG images
-def read_png_folder(folder_path):
-    images = []
-    for filename in os.listdir(folder_path):
-        if filename.endswith(".png"):
-            img_path = os.path.join(folder_path, filename)
-            img = cv2.imread(img_path)
-            img = preprocess(img)  # Apply your preprocessing function
-            images.append(img)
-    return np.array(images)
-
 # Apply grayscale filter
 def grayscale_filter(img):
     # Convert RGB to grayscale
@@ -64,14 +53,66 @@ def preprocess(img):
     
     return img
 
+# Function to read a folder of PNG images
+def read_png_folder(folder_path, target_size=(32, 32)):
+    images = []
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".png"):
+            img_path = os.path.join(folder_path, filename)
+            img = cv2.imread(img_path)
+            img = preprocess(img)  # Apply your preprocessing function
+            img = cv2.resize(img, target_size)  # Resize the image to a consistent size
+            images.append(img)
+    return np.array(images)
+
 # Reshape data
 def reshape(images):
     return images.reshape(images.shape[0], 32, 32, 1)
 
-# Example usage
-folder_path = "C:/Users/User/Downloads/mush_img"
-png_images = read_png_folder(folder_path)
-reshaped_images = reshape(png_images)
+folder_path = "C:/Users/User/Downloads/mush_img/"
+
+print("Folder path:", folder_path)
+
+# Read images and labels
+images = []
+labels = []
+
+for class_folder in os.listdir(folder_path):
+    print("Class folder:", class_folder)
+
+    class_folder_path = os.path.join(folder_path, class_folder)
+    print("Class folder path:", class_folder_path)
+
+    if os.path.isdir(class_folder_path):
+        class_images = read_png_folder(class_folder_path)
+        print("Class images shape:", class_images.shape)
+
+        class_labels = [int(class_folder)] * len(class_images)
+        print("Class labels:", class_labels)
+
+        images.extend(class_images)
+        labels.extend(class_labels)
+
+
+# Get the first image and its corresponding label
+print("Total images:", len(images))
+print("Total labels:", len(labels))
+
+# Check if any images were read
+if len(images) == 0:
+    print("No images were read. Please check the folder path and image format.")
+else:
+    # Print the first image and its corresponding label
+    image = images[0]
+    label = labels[0]
+
+    print("Image shape:", image.shape)
+    print("Label:", label)
+
+    # Display the image
+    plt.imshow(image, cmap='gray')
+    plt.title('Class label: {}'.format(label))
+    plt.show()
 
 # def leNet_model():
 #   model = Sequential()
@@ -116,28 +157,4 @@ reshaped_images = reshape(png_images)
 #   model.compile(Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
 #   return model
 
-# def evaluate_model(model, x_test, y_test):
-#     # Evaluate the model on the test set
-#     score = model.evaluate(x_test, y_test, verbose=0)
-#     print("Test Score:", score[0])
-#     print("Test Accuracy:", score[1])
 
-# def analyze_model(history):
-#     # Plot the training accuracy and validation accuracy
-#     plt.plot(history.history['accuracy'])
-#     plt.plot(history.history['val_accuracy'])
-#     plt.title('Model Accuracy')
-#     plt.xlabel('Epoch')
-#     plt.ylabel('Accuracy')
-#     plt.legend(['Train', 'Validation'], loc='upper left')
-#     plt.show()
-
-# def plot_loss(history):
-#     # Plot the training loss and validation loss
-#     plt.plot(history.history['loss'])
-#     plt.plot(history.history['val_loss'])
-#     plt.title('Model Loss')
-#     plt.xlabel('Epoch')
-#     plt.ylabel('Loss')
-#     plt.legend(['Train', 'Validation'], loc='upper left')
-#     plt.show()
