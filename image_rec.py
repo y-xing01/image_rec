@@ -9,6 +9,48 @@ import numpy as np
 import cv2
 import os
 
+def model():
+    model = Sequential()
+    model.add(Conv2D(16, (3, 3), activation='relu', input_shape=(200, 200, 3)))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Conv2D(32, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Flatten())
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+    
+    model.compile(Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
+def evaluate_model(model, x_test, y_test):
+    # Evaluate the model on the test set
+    score = model.evaluate(x_test, y_test, verbose=0)
+    print("Test Score:", score[0])
+    print("Test Accuracy:", score[1])
+
+def analyze_model(history):
+    # Plot the training accuracy and validation accuracy
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('Model Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.show()
+
+def plot_loss(history):
+    # Plot the training loss and validation loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Model Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.show()
+    
+    
 # Load image using keras.preprocessing
 img_keras = image.load_img("C:/Users/User/Downloads/basedata/train/good/good1.png")
 
@@ -55,46 +97,7 @@ print(train_dataset.class_indices)
 # Print dataset classes
 print(train_dataset.classes)
 
-def model():
-    model = Sequential()
-    model.add(Conv2D(16, (3, 3), activation='relu', input_shape=(200, 200, 3)))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(32, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(64, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Flatten())
-    model.add(Dense(512, activation='relu'))
-    model.add(Dense(1, activation='sigmoid'))
-    
-    model.compile(Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
-    return model
 
-def evaluate_model(model, x_test, y_test):
-    # Evaluate the model on the test set
-    score = model.evaluate(x_test, y_test, verbose=0)
-    print("Test Score:", score[0])
-    print("Test Accuracy:", score[1])
-
-def analyze_model(history):
-    # Plot the training accuracy and validation accuracy
-    plt.plot(history.history['accuracy'])
-    plt.plot(history.history['val_accuracy'])
-    plt.title('Model Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.legend(['Train', 'Validation'], loc='upper left')
-    plt.show()
-
-def plot_loss(history):
-    # Plot the training loss and validation loss
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('Model Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend(['Train', 'Validation'], loc='upper left')
-    plt.show()
 
 model = model()
 
