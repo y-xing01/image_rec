@@ -61,7 +61,7 @@ model = model()
 
 model_fit = model.fit(train_dataset, 
                       steps_per_epoch=5, 
-                      epochs=30, 
+                      epochs=50, 
                       validation_data=validation_dataset)
 
 dir_path = 'C:/Users/User/Downloads/basedata/test/'
