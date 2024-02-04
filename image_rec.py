@@ -64,3 +64,25 @@ model_fit = model.fit(train_dataset,
                       epochs=30, 
                       validation_data=validation_dataset)
 
+dir_path = 'C:/Users/User/Downloads/basedata/test/'
+
+for i in os.listdir(dir_path):
+    img_path = os.path.join(dir_path, i)
+
+    if os.path.isfile(img_path):  # Check if it's a file, not a directory
+        img = image.load_img(img_path, target_size=(200, 200))
+        plt.imshow(img)
+        plt.axis("off")
+
+        X = image.img_to_array(img)
+        X = np.expand_dims(X, axis=0)
+        images = np.vstack([X])
+        val = model.predict(images)
+
+        if val == 0:
+            label = "Good Mushroom"
+        else:
+            label = "Defect Mushroom"
+
+        plt.title(label)
+        plt.show()
