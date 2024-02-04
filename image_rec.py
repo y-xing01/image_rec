@@ -1,4 +1,3 @@
-
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
@@ -23,18 +22,32 @@ img_cv2 = cv2.imread("C:/Users/User/Downloads/basedata/train/good/good1.png")
 # Print shape
 print("Image shape (using OpenCV):", img_cv2.shape)
 
-train = ImageDataGenerator(rescale=1/255)
-validation = ImageDataGenerator(rescale=1/255)
+# Define ImageDataGenerator with preprocessing for training set
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True
+)
 
-train_dataset = train.flow_from_directory('C:/Users/User/Downloads/basedata/train/',
-                                          target_size=(200,200),
-                                         batch_size=3,
-                                         class_mode='binary')
+# Define ImageDataGenerator without augmentation for validation set
+validation_datagen = ImageDataGenerator(rescale=1./255)
 
-validation_dataset = train.flow_from_directory('C:/Users/User/Downloads/basedata/validation/',
-                                          target_size=(200,200),
-                                         batch_size=3,
-                                         class_mode='binary')
+# Flow training images in batches of 3 using train_datagen generator
+train_dataset = train_datagen.flow_from_directory(
+    'C:/Users/User/Downloads/basedata/train/',
+    target_size=(200, 200),
+    batch_size=3,
+    class_mode='binary'
+)
+
+# Flow validation images in batches of 3 using validation_datagen generator
+validation_dataset = validation_datagen.flow_from_directory(
+    'C:/Users/User/Downloads/basedata/validation/',
+    target_size=(200, 200),
+    batch_size=3,
+    class_mode='binary'
+)
 
 # Print class indices
 print(train_dataset.class_indices)
@@ -56,13 +69,50 @@ def model():
     
     model.compile(Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
     return model
-    
+
+def evaluate_model(model, x_test, y_test):
+    # Evaluate the model on the test set
+    score = model.evaluate(x_test, y_test, verbose=0)
+    print("Test Score:", score[0])
+    print("Test Accuracy:", score[1])
+
+def analyze_model(history):
+    # Plot the training accuracy and validation accuracy
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('Model Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.show()
+
+def plot_loss(history):
+    # Plot the training loss and validation loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Model Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.show()
+
 model = model()
 
-model_fit = model.fit(train_dataset, 
-                      steps_per_epoch=5, 
-                      epochs=50, 
-                      validation_data=validation_dataset)
+# Fit the model and get history for analysis
+history = model.fit(
+    train_dataset,
+    steps_per_epoch=5,
+    epochs=50,
+    validation_data=validation_dataset
+)
+
+# Analyze and visualize the model performance
+analyze_model(history)
+plot_loss(history)
+
+# Evaluation on test set
+x_test, y_test = validation_dataset.next()
+evaluate_model(model, x_test, y_test)
 
 dir_path = 'C:/Users/User/Downloads/basedata/test/'
 
@@ -74,12 +124,15 @@ for i in os.listdir(dir_path):
         plt.imshow(img)
         plt.axis("off")
 
+        # Preprocess the image
         X = image.img_to_array(img)
         X = np.expand_dims(X, axis=0)
-        images = np.vstack([X])
-        val = model.predict(images)
+        X = X / 255.0  # Normalization
 
-        if val == 0:
+        # Predict the class
+        val = model.predict(X)
+
+        if val <= 0.5:
             label = "Good Mushroom"
         else:
             label = "Defect Mushroom"
