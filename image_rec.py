@@ -42,3 +42,25 @@ print(train_dataset.class_indices)
 # Print dataset classes
 print(train_dataset.classes)
 
+def model():
+    model = Sequential()
+    model.add(Conv2D(16, (3, 3), activation='relu', input_shape=(200, 200, 3)))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Conv2D(32, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Flatten())
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+    
+    model.compile(Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+    
+model = model()
+
+model_fit = model.fit(train_dataset, 
+                      steps_per_epoch=5, 
+                      epochs=30, 
+                      validation_data=validation_dataset)
+
