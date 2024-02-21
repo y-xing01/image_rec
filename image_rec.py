@@ -1,17 +1,18 @@
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import Adam
-from keras.preprocessing import image
-import matplotlib.pyplot as plt
-import tensorflow as tf 
-import numpy as np
-import cv2
 import os
+import cv2
+import numpy as np
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing import image
+import matplotlib.pyplot as plt
 
-def model():
+def build_model():
     model = Sequential()
     model.add(Conv2D(16, (3, 3), activation='relu', input_shape=(200, 200, 3)))
+    model.add(MaxPooling2D(2, 2))
+    model.add(Conv2D(32, (3, 3), activation='relu'))
     model.add(MaxPooling2D(2, 2))
     model.add(Conv2D(32, (3, 3), activation='relu'))
     model.add(MaxPooling2D(2, 2))
@@ -20,8 +21,8 @@ def model():
     model.add(Flatten())
     model.add(Dense(512, activation='relu'))
     model.add(Dense(1, activation='sigmoid'))
-    
-    model.compile(Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+
+    model.compile(Adam(learning_rate=0.01), loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
 def evaluate_model(model, x_test, y_test):
@@ -49,14 +50,6 @@ def plot_loss(history):
     plt.ylabel('Loss')
     plt.legend(['Train', 'Validation'], loc='upper left')
     plt.show()
-    
-    
-# Load image using keras.preprocessing
-img_keras = image.load_img("C:/Users/User/Downloads/basedata/train/good/good1.png")
-
-# Display image using matplotlib
-plt.imshow(img_keras)
-plt.show()
 
 # Load image using OpenCV
 img_cv2 = cv2.imread("C:/Users/User/Downloads/basedata/train/good/good1.png")
@@ -75,7 +68,7 @@ train_datagen = ImageDataGenerator(
 # Define ImageDataGenerator without augmentation for validation set
 validation_datagen = ImageDataGenerator(rescale=1./255)
 
-# Flow training images in batches of 3 using train_datagen generator
+# Flow training images in batches using train_datagen generator
 train_dataset = train_datagen.flow_from_directory(
     'C:/Users/User/Downloads/basedata/train/',
     target_size=(200, 200),
@@ -83,7 +76,7 @@ train_dataset = train_datagen.flow_from_directory(
     class_mode='binary'
 )
 
-# Flow validation images in batches of 3 using validation_datagen generator
+# Flow validation images in batches using validation_datagen generator
 validation_dataset = validation_datagen.flow_from_directory(
     'C:/Users/User/Downloads/basedata/validation/',
     target_size=(200, 200),
@@ -91,20 +84,13 @@ validation_dataset = validation_datagen.flow_from_directory(
     class_mode='binary'
 )
 
-# Print class indices
-print(train_dataset.class_indices)
-
-# Print dataset classes
-print(train_dataset.classes)
-
-
-
-model = model()
+# Build and compile the model
+model = build_model()
 
 # Fit the model and get history for analysis
 history = model.fit(
     train_dataset,
-    steps_per_epoch=5,
+    steps_per_epoch=10,
     epochs=50,
     validation_data=validation_dataset
 )
@@ -113,10 +99,11 @@ history = model.fit(
 analyze_model(history)
 plot_loss(history)
 
-# Evaluation on test set
+# Evaluation on a test set
 x_test, y_test = validation_dataset.next()
 evaluate_model(model, x_test, y_test)
 
+# Load images from the test directory and make predictions
 dir_path = 'C:/Users/User/Downloads/basedata/test/'
 
 for i in os.listdir(dir_path):
@@ -133,9 +120,9 @@ for i in os.listdir(dir_path):
         X = X / 255.0  # Normalization
 
         # Predict the class
-        val = model.predict(X)
+        prediction = model.predict(X)
 
-        if val <= 0.5:
+        if prediction <= 0.5:
             label = "Good Mushroom"
         else:
             label = "Defect Mushroom"
