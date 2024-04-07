@@ -2,27 +2,28 @@ import os
 import cv2
 import numpy as np
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications import VGG16
 import matplotlib.pyplot as plt
 
 def build_model():
+    # Using a pre-trained VGG16 model with transfer learning
+    base_model = VGG16(weights='imagenet', include_top=False, input_shape=(200, 200, 3))
+
     model = Sequential()
-    model.add(Conv2D(16, (3, 3), activation='relu', input_shape=(200, 200, 3)))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(32, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(32, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(2, 2))
-    model.add(Conv2D(64, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(2, 2))
+    model.add(base_model)
     model.add(Flatten())
     model.add(Dense(512, activation='relu'))
+    model.add(Dropout(0.5))  # Adding dropout for regularization
     model.add(Dense(1, activation='sigmoid'))
 
-    model.compile(Adam(learning_rate=0.01), loss='binary_crossentropy', metrics=['accuracy'])
+    # Freeze the convolutional base
+    base_model.trainable = False
+
+    model.compile(Adam(learning_rate=0.0001), loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
 def evaluate_model(model, x_test, y_test):
@@ -52,7 +53,7 @@ def plot_loss(history):
     plt.show()
 
 # Load image using OpenCV
-img_cv2 = cv2.imread("C:/Users/User/Downloads/basedata/train/good/good1.png")
+img_cv2 = cv2.imread("C:/Users/User/Downloads/FYProject/image_rec/basedata/train/good/good1.png")
 
 # Print shape
 print("Image shape (using OpenCV):", img_cv2.shape)
@@ -62,6 +63,10 @@ train_datagen = ImageDataGenerator(
     rescale=1./255,
     shear_range=0.2,
     zoom_range=0.2,
+    rotation_range=20,  # Augment with rotation
+    width_shift_range=0.2,  # Augment with width shift
+    height_shift_range=0.2,  # Augment with height shift
+    brightness_range=[0.8, 1.2],  # Augment with brightness adjustment
     horizontal_flip=True
 )
 
@@ -70,17 +75,17 @@ validation_datagen = ImageDataGenerator(rescale=1./255)
 
 # Flow training images in batches using train_datagen generator
 train_dataset = train_datagen.flow_from_directory(
-    'C:/Users/User/Downloads/basedata/train/',
+    'C:/Users/User/Downloads/FYProject/image_rec/basedata/train/',
     target_size=(200, 200),
-    batch_size=3,
+    batch_size=32,
     class_mode='binary'
 )
 
 # Flow validation images in batches using validation_datagen generator
 validation_dataset = validation_datagen.flow_from_directory(
-    'C:/Users/User/Downloads/basedata/validation/',
+    'C:/Users/User/Downloads/FYProject/image_rec/basedata/validation/',
     target_size=(200, 200),
-    batch_size=3,
+    batch_size=32,
     class_mode='binary'
 )
 
@@ -90,9 +95,10 @@ model = build_model()
 # Fit the model and get history for analysis
 history = model.fit(
     train_dataset,
-    steps_per_epoch=10,
-    epochs=50,
-    validation_data=validation_dataset
+    steps_per_epoch=len(train_dataset),
+    epochs=30,
+    validation_data=validation_dataset,
+    validation_steps=len(validation_dataset)
 )
 
 # Analyze and visualize the model performance
@@ -104,7 +110,7 @@ x_test, y_test = validation_dataset.next()
 evaluate_model(model, x_test, y_test)
 
 # Load images from the test directory and make predictions
-dir_path = 'C:/Users/User/Downloads/basedata/test/'
+dir_path = 'C:/Users/User/Downloads/FYProject/image_rec/basedata/test/'
 
 for i in os.listdir(dir_path):
     img_path = os.path.join(dir_path, i)
@@ -122,7 +128,7 @@ for i in os.listdir(dir_path):
         # Predict the class
         prediction = model.predict(X)
 
-        if prediction <= 0.5:
+        if prediction >= 0.5:
             label = "Good Mushroom"
         else:
             label = "Defect Mushroom"
