@@ -1,5 +1,4 @@
 import os
-import cv2
 import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
@@ -8,6 +7,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications import VGG16
 import matplotlib.pyplot as plt
+from tkinter import Tk, filedialog
 
 def build_model():
     # Using a pre-trained VGG16 model with transfer learning
@@ -51,12 +51,6 @@ def plot_loss(history):
     plt.ylabel('Loss')
     plt.legend(['Train', 'Validation'], loc='upper left')
     plt.show()
-
-# Load image using OpenCV
-img_cv2 = cv2.imread("C:/Users/User/Downloads/FYProject/image_rec/basedata/train/good/good1.png")
-
-# Print shape
-print("Image shape (using OpenCV):", img_cv2.shape)
 
 # Define ImageDataGenerator with preprocessing for training set
 train_datagen = ImageDataGenerator(
@@ -105,9 +99,36 @@ history = model.fit(
 analyze_model(history)
 plot_loss(history)
 
-# Evaluation on a test set
-x_test, y_test = validation_dataset.next()
-evaluate_model(model, x_test, y_test)
+# Function to upload an image from the device
+def select_image():
+    root = Tk()
+    root.withdraw()  # Hide the main window
+    file_path = filedialog.askopenfilename()  # Open file dialog
+    return file_path
+
+# # Load images from the test directory and make predictions
+# dir_path = select_image()
+
+# if os.path.isfile(dir_path):  # Check if it's a file, not a directory
+#     img = image.load_img(dir_path, target_size=(200, 200))
+#     plt.imshow(img)
+#     plt.axis("off")
+
+#     # Preprocess the image
+#     X = image.img_to_array(img)
+#     X = np.expand_dims(X, axis=0)
+#     X = X / 255.0  # Normalization
+
+#     # Predict the class
+#     prediction = model.predict(X)
+
+#     if prediction >= 0.5:
+#         label = "Defect Mushroom"
+#     else:
+#         label = "Good Mushroom"
+
+#     plt.title(label)
+#     plt.show()
 
 # Load images from the test directory and make predictions
 dir_path = 'C:/Users/User/Downloads/FYProject/image_rec/basedata/test/'
